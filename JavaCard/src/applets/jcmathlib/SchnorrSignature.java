@@ -11,19 +11,14 @@ import javacard.security.MessageDigest;
  * according to BIP0340 specification.
  */
 public class SchnorrSignature {
-    // Status word constants
     private static final short SW_INVALID_MESSAGE_LENGTH = (short) 0x6A80;
     private static final short SW_INVALID_SECRET_KEY = (short) 0x6A81;
-    private static final short SW_VERIFICATION_FAILED = (short) 0x6A82;
     private static final short SW_SIGNATURE_FAILED = (short) 0x6A83;
 
-    // Buffer sizes and constants
     private static final short MESSAGE_LENGTH = 32;
     private static final short SIGNATURE_LENGTH = 64;
-    private static final short POINT_LENGTH = 32; // x-only public key
     private static final short PRIVATEKEY_LENGTH = 32;
 
-    // Tag strings for the tagged hash function
     private static final byte[] TAG_AUX = {
             'B', 'I', 'P', '0', '3', '4', '0', '/', 'a', 'u', 'x'
     };
@@ -36,24 +31,16 @@ public class SchnorrSignature {
             'B', 'I', 'P', '0', '3', '4', '0', '/', 'c', 'h', 'a', 'l', 'l', 'e', 'n', 'g', 'e'
     };
 
-    // Resources
     private MessageDigest sha256;
     private ECCurve secp256k1;
     private ResourceManager rm;
 
-    // Temporary buffers
     private byte[] tmpBuffer;
     private byte[] hashBuffer;
     private byte[] nonceBuffer;
     private byte[] pointBuffer;
     private byte[] combBytes = new byte[96];
 
-    /**
-     * Constructor for SchnorrSignature
-     *
-     * @param secp256k1 the SECP256k1 curve utilities
-     * @param rm        the ResourceManager for BigNat operations
-     */
     public SchnorrSignature(ECCurve secp256k1, ResourceManager rm) {
         this.secp256k1 = secp256k1;
         this.rm = rm;
@@ -69,21 +56,11 @@ public class SchnorrSignature {
 
     /**
      * Generate a tagged hash as defined in BIP0340
-     *
-     * @param tag       the tag to use
-     * @param msg       the message to hash
-     * @param msgOffset offset in the message buffer
-     * @param msgLength the length of the message
-     * @param out       output buffer for the hash
-     * @param outOffset offset in the output buffer
-     * @return the length of the hash
      */
     private short taggedHash(byte[] tag, byte[] msg, short msgOffset, short msgLength, byte[] out, short outOffset) {
-        // Hash the tag
         sha256.reset();
         sha256.doFinal(tag, (short) 0, (short) tag.length, hashBuffer, (short) 0);
 
-        // Create buffer with tag hash twice + message
         short offset = 0;
         Util.arrayCopyNonAtomic(hashBuffer, (short) 0, tmpBuffer, offset, (short) 32);
         offset += 32;
@@ -91,50 +68,20 @@ public class SchnorrSignature {
         offset += 32;
         Util.arrayCopyNonAtomic(msg, msgOffset, tmpBuffer, offset, msgLength);
 
-        // Hash the whole thing
         sha256.reset();
         return sha256.doFinal(tmpBuffer, (short) 0, (short) (64 + msgLength), out, outOffset);
     }
 
-    /**
-     * XOR operation between two byte arrays
-     *
-     * @param a         first array
-     * @param aOffset   offset in first array
-     * @param b         second array
-     * @param bOffset   offset in second array
-     * @param length    length to XOR
-     * @param out       output buffer
-     * @param outOffset offset in output buffer
-     */
     private void xor(byte[] a, short aOffset, byte[] b, short bOffset, short length, byte[] out, short outOffset) {
         for (short i = 0; i < length; i++) {
             out[(short) (outOffset + i)] = (byte) (a[(short) (aOffset + i)] ^ b[(short) (bOffset + i)]);
         }
     }
 
-    /**
-     * Check if a point has an even Y coordinate
-     *
-     * @param point       the point to check (full uncompressed point)
-     * @param pointOffset offset in the point buffer
-     * @return true if the Y coordinate is even
-     */
     private boolean hasEvenY(byte[] point, short pointOffset) {
-        // For uncompressed points (0x04 || x || y), check if y is even
-        // Y coordinate starts at offset 33 (after 0x04 prefix and 32-byte X)
-        // Just check the last bit of the last byte of Y
         return (point[(short) (pointOffset + 64)] & 1) == 0;
     }
 
-    /**
-     * Convert a BigNat to a byte array with proper padding to 32 bytes
-     *
-     * @param bn        the BigNat to convert
-     * @param out       output buffer
-     * @param outOffset offset in output buffer
-     * @return number of bytes written
-     */
     private short bigNatToBytes(BigNat bn, byte[] out, short outOffset) {
         short len = bn.copyToByteArray(out, outOffset);
 
@@ -147,14 +94,6 @@ public class SchnorrSignature {
         return len;
     }
 
-    /**
-     * Create a BigNat from a byte array
-     *
-     * @param data   source byte array
-     * @param offset offset in source array
-     * @param length length of data
-     * @param out    BigNat to store the result
-     */
     private void bytesToBigNat(byte[] data, short offset, short length, BigNat out) {
         out.fromByteArray(data, offset, length);
     }
@@ -178,20 +117,16 @@ public class SchnorrSignature {
                       byte[] auxRand, short auxRandOffset, short auxRandLength,
                       byte[] signature, short signatureOffset) {
 
-        // Check message length
         if ((short) (msgOffset + MESSAGE_LENGTH) > msg.length) {
             ISOException.throwIt(SW_INVALID_MESSAGE_LENGTH);
         }
 
-        // Create BigNat for private key using direct construction
         BigNat secKeyBN = new BigNat((short) 32, JCSystem.MEMORY_TYPE_TRANSIENT_RESET, rm);
         bytesToBigNat(secKey, secKeyOffset, PRIVATEKEY_LENGTH, secKeyBN);
 
-        // Create BigNat for secp256k1 order n
         BigNat secp256k1OrderN = new BigNat((short) 32, JCSystem.MEMORY_TYPE_TRANSIENT_RESET, rm);
         bytesToBigNat(SECP256k1.SECP256K1_R, (short) 0, (short) 32, secp256k1OrderN);
 
-        // Check if 1 <= secKey <= n-1
         BigNat one = new BigNat((short) 1, JCSystem.MEMORY_TYPE_TRANSIENT_RESET, rm);
         one.setValue((byte) 1);
 
@@ -200,7 +135,6 @@ public class SchnorrSignature {
         nMinusOne.decrement();
 
         if (secKeyBN.isLesser(one) || nMinusOne.isLesser(secKeyBN)) {
-            // Instead of freeing BigNats, simply throw because cleanup is handled by the resource allocator
             ISOException.throwIt(SW_INVALID_SECRET_KEY);
         }
 
@@ -218,7 +152,7 @@ public class SchnorrSignature {
             secKeyBN.copy(newSecKey);
         }
 
-        // Get x-coordinate of P (32 bytes after the 0x04 prefix)
+        // Get x-coordinate of P
         byte[] pubKeyX = new byte[32];
         Util.arrayCopyNonAtomic(pointBuffer, (short) 1, pubKeyX, (short) 0, (short) 32);
 
@@ -267,7 +201,6 @@ public class SchnorrSignature {
             k.copy(secp256k1OrderN);
             k.subtract(k0);
         }
-        // k0 is not explicitly freed
 
         // Get x-coordinate of R (32 bytes after the 0x04 prefix)
         byte[] rx = new byte[32];

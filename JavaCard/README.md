@@ -71,6 +71,8 @@ This application combines a Python UI for Nostr network interaction with smartca
 
 ## Implementation details
 
+Schnorr signing was implemented and tested using a very well structured information from [learnmebitcoin](https://learnmeabitcoin.com/technical/cryptography/elliptic-curve/schnorr/).
+
 NFC support is not implemented
 
 Baseline for the javacard implementation was reused and inspired from [status keycard](https://github.com/OpenCryptoProject/JCMathLib) and adopted for nostr, namely implementation of Schnorr signature under javacard constraints.
