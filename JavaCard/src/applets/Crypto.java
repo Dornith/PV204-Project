@@ -45,13 +45,13 @@ public class Crypto {
         sha512 = MessageDigest.getInstance(MessageDigest.ALG_SHA_512, false);
         aesCbcIso9797m2 = Cipher.getInstance(Cipher.ALG_AES_CBC_ISO9797_M2,false);
 
-        try {
-            hmacSHA512 = Signature.getInstance(Signature.ALG_HMAC_SHA_512, false);
-            hmacKey = (HMACKey) KeyBuilder.buildKey(KeyBuilder.TYPE_HMAC_TRANSIENT_DESELECT, KeyBuilder.LENGTH_AES_256, false);
-        } catch (CryptoException e) {
+        //try {
+        //    hmacSHA512 = Signature.getInstance(Signature.ALG_HMAC_SHA_512, false);
+        //    hmacKey = (HMACKey) KeyBuilder.buildKey(KeyBuilder.TYPE_HMAC_TRANSIENT_DESELECT, KeyBuilder.LENGTH_AES_256, false);
+        //} catch (CryptoException e) {
             hmacSHA512 = null;
             hmacBlock = JCSystem.makeTransientByteArray(HMAC_BLOCK_SIZE, JCSystem.CLEAR_ON_RESET);
-        }
+        //}
 
     }
 

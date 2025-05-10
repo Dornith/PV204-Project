@@ -46,6 +46,7 @@ public class SchnorrSignature {
     private byte[] hashBuffer;
     private byte[] nonceBuffer;
     private byte[] pointBuffer;
+    private byte[] combBytes = new byte[96];
 
     /**
      * Constructor for SchnorrSignature
@@ -62,7 +63,8 @@ public class SchnorrSignature {
         this.tmpBuffer = new byte[256]; // Larger buffer for various operations
         this.hashBuffer = new byte[32];
         this.nonceBuffer = new byte[32];
-        this.pointBuffer = new byte[65]; // Uncompressed point format
+        this.pointBuffer = new byte[65];
+        this.combBytes = new byte[96];// Uncompressed point format
     }
 
     /**
@@ -231,15 +233,14 @@ public class SchnorrSignature {
 
         // Compute t = bytes(nonce seed) || bytes(P) || msg
         short offset = 0;
-        Util.arrayCopyNonAtomic(nonceBuffer, (short) 0, tmpBuffer, offset, (short) 32);
+        Util.arrayCopyNonAtomic(nonceBuffer, (short) 0, combBytes, offset, (short) 32);
         offset += 32;
-        Util.arrayCopyNonAtomic(pubKeyX, (short) 0, tmpBuffer, offset, (short) 32);
+        Util.arrayCopyNonAtomic(pubKeyX, (short) 0, combBytes, offset, (short) 32);
         offset += 32;
-        Util.arrayCopyNonAtomic(msg, msgOffset, tmpBuffer, offset, MESSAGE_LENGTH);
+        Util.arrayCopyNonAtomic(msg, msgOffset, combBytes, offset, MESSAGE_LENGTH);
         offset += MESSAGE_LENGTH;
 
-        // Compute k0 = int(tagged_hash("BIP0340/nonce", t)) mod n
-        taggedHash(TAG_NONCE, tmpBuffer, (short) 0, offset, hashBuffer, (short) 0);
+        taggedHash(TAG_NONCE, combBytes, (short) 0, offset, hashBuffer, (short) 0);
 
         BigNat k0 = new BigNat((short) 32, JCSystem.MEMORY_TYPE_TRANSIENT_RESET, rm);
         bytesToBigNat(hashBuffer, (short) 0, (short) 32, k0);
@@ -274,14 +275,14 @@ public class SchnorrSignature {
 
         // Compute e = int(tagged_hash("BIP0340/challenge", bytes(R) || bytes(P) || m)) mod n
         offset = 0;
-        Util.arrayCopyNonAtomic(rx, (short) 0, tmpBuffer, offset, (short) 32);
+        Util.arrayCopyNonAtomic(rx, (short) 0, combBytes, offset, (short) 32);
         offset += 32;
-        Util.arrayCopyNonAtomic(pubKeyX, (short) 0, tmpBuffer, offset, (short) 32);
+        Util.arrayCopyNonAtomic(pubKeyX, (short) 0, combBytes, offset, (short) 32);
         offset += 32;
-        Util.arrayCopyNonAtomic(msg, msgOffset, tmpBuffer, offset, MESSAGE_LENGTH);
+        Util.arrayCopyNonAtomic(msg, msgOffset, combBytes, offset, MESSAGE_LENGTH);
         offset += MESSAGE_LENGTH;
 
-        taggedHash(TAG_CHALLENGE, tmpBuffer, (short) 0, offset, hashBuffer, (short) 0);
+        taggedHash(TAG_CHALLENGE, combBytes, (short) 0, offset, hashBuffer, (short) 0);
 
         BigNat e = new BigNat((short) 32, JCSystem.MEMORY_TYPE_TRANSIENT_RESET, rm);
         bytesToBigNat(hashBuffer, (short) 0, (short) 32, e);

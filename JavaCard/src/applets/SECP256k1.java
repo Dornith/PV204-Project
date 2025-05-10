@@ -46,6 +46,7 @@ public class SECP256k1 {
             (byte)0xBF,(byte)0xD2,(byte)0x5E,(byte)0x8C,(byte)0xD0,(byte)0x36,(byte)0x41,(byte)0x41
     };
 
+
     static final byte SECP256K1_K = (byte)0x01;
 
     static final short SECP256K1_KEY_SIZE = 256;

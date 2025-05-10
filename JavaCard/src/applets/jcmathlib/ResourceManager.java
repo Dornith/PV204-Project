@@ -129,8 +129,7 @@ public class ResourceManager {
         // verifyEcdsa = Signature.getInstance(Signature.ALG_ECDSA_SHA_256, false);
         verifyEcdsa = Signature.getInstance((byte) 33, false);
         if (OperationSupport.getInstance().EC_HW_ADD) {
-            // ecAddKA = KeyAgreement.getInstance(KeyAgreement.ALG_EC_PACE_GM, false);
-            ecAddKA = KeyAgreement.getInstance((byte) 5, false);
+            ecAddKA = KeyAgreement.getInstance(KeyAgreement.ALG_EC_PACE_GM, false);
         }
 
         // RSA Sq Helpers
