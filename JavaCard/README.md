@@ -80,4 +80,4 @@ As for the UI client, the decision to ship the project as a vm image, was due to
 
 The client app communicates with the tcp gateway by sending apdu commands which are then transfered directly onto a JCardsim runtime with keycard applet running. The responses are then trasferred back.
 
-Line 789 derive_child_key_direct - function in client where the implementation of child key derivation from extended public keys is implemented.
+Line 789 derive_child_key_direct - function in client where the implementation of child key derivation from extended public keys.
